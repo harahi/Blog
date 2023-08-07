@@ -3,6 +3,7 @@ import argparse
 import os
 import re
 
+import markdown
 from marko.ext.gfm import gfm as marko
 from github import Github
 from feedgen.feed import FeedGenerator
@@ -156,13 +157,15 @@ def add_md_firends(repo, md, me):
         for comment in issue.get_comments():
             if is_hearted_by_me(comment, me):
                 try:
-                    s += _make_friend_table_string(comment.body)
+                    s += _make_friend_table_string(comment.body or "")
                 except Exception as e:
                     print(str(e))
                     pass
+    s = markdown.markdown(s, output_format="html", extensions=["extra"])
     with open(md, "a+", encoding="utf-8") as md:
         md.write("## 友情链接\n")
         md.write(s)
+        md.write("\n\n")
 
 
 def add_md_recent(repo, md, me, limit=5):
@@ -184,18 +187,26 @@ def add_md_recent(repo, md, me, limit=5):
 def add_md_header(md, repo_name):
     with open(md, "w", encoding="utf-8") as md:
         md.write(MD_HEAD.format(repo_name=repo_name))
+        md.write("\n")
 
 
 def add_md_label(repo, md, me):
     labels = get_repo_labels(repo)
 
-    # sort lables by description info if it exists, otherwise sort by name, 
+    # sort lables by description info if it exists, otherwise sort by name,
     # for example, we can let the description start with a number (1#Java, 2#Docker, 3#K8s, etc.)
-    labels = sorted(labels, key=lambda x: (x.description is None, x.description == "", x.description, x.name))
+    labels = sorted(
+        labels,
+        key=lambda x: (
+            x.description is None,
+            x.description == "",
+            x.description,
+            x.name,
+        ),
+    )
 
     with open(md, "a+", encoding="utf-8") as md:
         for label in labels:
-
             # we don't need add top label again
             if label.name in IGNORE_LABELS:
                 continue
@@ -270,7 +281,7 @@ def main(token, repo_name, issue_number=None, dir_name=BACKUP_DIR):
     for func in [add_md_firends, add_md_top, add_md_recent, add_md_label, add_md_todo]:
         func(repo, "README.md", me)
 
-    # generate_rss_feed(repo, "feed.xml", me)
+    generate_rss_feed(repo, "feed.xml", me)
     to_generate_issues = get_to_generate_issues(repo, dir_name, issue_number)
 
     # save md files to backup folder
@@ -284,12 +295,12 @@ def save_issue(issue, me, dir_name=BACKUP_DIR):
     )
     with open(md_name, "w") as f:
         f.write(f"# [{issue.title}]({issue.html_url})\n\n")
-        f.write(issue.body)
+        f.write(issue.body or "")
         if issue.comments:
             for c in issue.get_comments():
                 if is_me(c, me):
                     f.write("\n\n---\n\n")
-                    f.write(c.body)
+                    f.write(c.body or "")
 
 
 if __name__ == "__main__":
