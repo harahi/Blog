@@ -12,9 +12,9 @@ My personal blog using issues and GitHub Actions (随意转载，无需署名)
 </thead>
 <tbody>
 <tr>
-<td></td>
-<td></td>
-<td></td>
+<td>Min</td>
+<td>http://suwish.com/</td>
+<td>健身达人Min</td>
 </tr>
 </tbody>
 </table>
